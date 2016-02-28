@@ -1,0 +1,1284 @@
+---
+title: "An Exploration into the Individual Financial Contributions from California to the 2016 Presidential Campaigns" 
+author: Michal Ondras
+output: 
+  md_document:
+    variant: markdown_github
+---
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, packages}
+#  md_document:
+#    variant: markdown_github
+#    html_document
+
+setwd("/Users/michalondras/GitHub/ud-EDA-R-project/ud-EDA-R-submisson")
+
+library(ggplot2)
+library(gridExtra)
+library(RColorBrewer)
+#library(psych)
+#library(tidyr)
+#library(plyr)
+library(dplyr)
+library(nortest)
+#library(scales)
+#library(memisc)
+#theme_set(theme_minimal(20))
+```
+## About the Data
+The data were exported from the website: 
+
++ 'http://fec.gov/disclosurep/pnational.do'  
+
+The data contain individual financial contributions, refunds to individuals and transfers from committees -- to date -- from the state of California to the 2016 United States of America presidential campaigns. 
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, Load_the_Data}
+#imports csv data
+pres_df <-tbl_df(read.csv('P00000001-CA.csv'))
+```
+## Variables in the Unmodified Data
+Detailed variable information of the data exists at:
+
++ 'ftp://ftp.fec.gov/FEC/Presidential_Map/2016/DATA_DICTIONARIES/CONTRIBUTOR_FORMAT.txt'.
+
+The unmodified data have 56,764 observations and 19 variables. 
+
+```{r echo=FALSE,  message=FALSE, warning=FALSE, Summary_of_Data_one}
+# Summarize the unmodified data set
+dim(pres_df)
+```
+Most of the unmodified data is categorical. The variables "CONTB_RECEIPT_AMT" and "FILE_NUM"" are the only numerics. For all intents and purposes, "FILE_NUM" could be changed to a categorical variable, as no meaningful descriptive statistical data could be extracted from it as a numeric.  An examination of the variables "CMTE_ID," "CAND_ID," and "CAND_NM" reveals a degree of synonymity.  Likewise, variables "TRAN_ID," "FILE_NUM,"  "FORM_TP," "MEMO_TEXT,"" and "MEMO_CD" seem to be linked to Federal Election Commission (FEC) internal information.
+
+```{r echo=FALSE,  message=FALSE, warning=FALSE, Summary_of_Data_two}
+# Summarize the unmodified data set
+str(pres_df)
+```
+# Exploratory Data Analysis
+### Summarizing the unmodified dataset
+The minimum Individual Financial Contribution (IFC) from California (CA) was $-10K.  A summary of IFC statistics is below:
+
+```{r echo=FALSE,  message=FALSE, warning=FALSE, Summary_IFCs}
+# Summarize the unmodified dataset IFCs
+summary(pres_df$contb_receipt_amt)
+```
+The negative $10K contribution was a refund based on the receipt description. Here she is:
+
+```{r echo=FALSE,  message=FALSE, warning=FALSE, Summary_of_neg_10K}
+# subset of data for -$10K contributors
+subset(pres_df,pres_df$contb_receipt_amt == -10000)
+```
+Other negative IFCs in the data were refunds, re-designation, and re-attributions -- among others.  The negative IFCs affect the mean and the standard deviation or variance but not the median and the quantiles.  As a result, I do not try to emphasize means or standard deviations herein.  Other statistics from this IFC summary were the maximum IFC ($10.8K), along with the first quantile ($35), the median ($100), and the third quantile ($250).  The refund for the negative 10K contribution is below:  
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, Summary_10k_refund}
+# does the -10K have a positive +10K IFC?
+minimum.contbr <- filter(pres_df, contbr_nm == "HARRIS, CAROLE", 
+                         contb_receipt_amt > 0)
+select(minimum.contbr, 
+       receipt_desc, 
+       contbr_employer,
+       memo_text, 
+       contbr_occupation)
+```
+A table of the multiple contributors who contributed the maximum IFCs is below: 
+
+```{r echo=FALSE,  message=FALSE, warning=FALSE, Summary_max_IFCs}
+# Details of the maximum IFC
+maximum.contbr <- filter(pres_df,  
+                         contb_receipt_amt >= 10800)
+
+maximums <- select(maximum.contbr, 
+                    contb_receipt_amt,
+                    cand_nm,
+                    contbr_nm, 
+                    contbr_employer,
+                    contbr_occupation,
+                    memo_text, 
+                   receipt_desc)
+
+select(maximums,contb_receipt_amt, contbr_nm, cand_nm)
+```
+Twelve IFCs at the maximum amount ($10,800) exist, some of which are duplicate. These were all re-attributed or re-designated per the memo text and receipt description, possibly to the national party committee. The duplicate IFCs of $10,800, given on the same date, by the same contributor seem very odd. A summary of everything else is here:
+
+```{r echo=FALSE,  message=FALSE, warning=FALSE, Summary}
+summary(pres_df)
+```
+The summary above tells me a couple things. Hillary Clinton has the highest number of contributions. Democrats have the highest number of contributions.  The contributor OSI IMEOKPARIA has the highest number of contributions. Los Angeles City seems to be the leading city for number of contributions. Retired people seem to have the highest number of contributions more than any other occupation.  
+
+```{r echo=FALSE,  message=FALSE, warning=FALSE, adding_variables}
+# Add political affiliation
+cand.list <- tbl_df(read.csv('candidate-list.csv'))
+pres_df <- merge(pres_df,cand.list, by = 'cand_id')
+#names(pres_df)
+
+pres_df$cand_nm <- pres_df$cand_nm.x 
+pres_df$contb_receipt_amt <- pres_df$contb_receipt_amt.x
+                            
+# Add sex of candidate
+cand.sex <- data.frame(cand_nm =unique(cand.list$cand_nm),
+                       sex = 'male')
+cand.sex$sex <- 
+  ifelse(cand.sex$cand_nm == "Clinton, Hillary Rodham" | 
+           cand.sex$cand_nm == "Fiorina, Carly", "female", "male")
+
+pres_df <- merge(pres_df, cand.sex, by = "cand_nm")
+pres_df <- tbl_df(pres_df)
+
+# Add CA county based on Zip
+pres_df$zip <- strtrim(pres_df$contbr_zip,5)
+#head(pres_df$zip)
+
+cand.zip <- tbl_df(read.csv('zip_code_database.csv'))
+cand.zip <- select(cand.zip, zip, county, estimated_population)
+cand.zip$county <- trimws(gsub("County", "", cand.zip$county, 
+                               ignore.case = T))
+
+pres_df <- tbl_df(merge(pres_df,cand.zip, by = 'zip'))
+
+# Add Census Data for Counties
+#census <- tbl_df(read.csv('PEP_2014_PEPANNRES_with_ann.csv'))
+#census <- select(census, GEO.display.label, respop72014)
+#census <- rename(census, c("GEO.display.label" = "county", "respop72014" = "county_pop"))
+#census <- separate(census, county, c("county", "state"), sep =",")
+#pres_df <- tbl_df(merge(pres_df,census, by = 'county'))
+
+```
+
+### Merging Datasets and Insights
+I decided to add some more data and merge a couple data sets to the data set above:
+
++ 'candidate-list.csv'
+
++ 'zip_code_database.csv'
+
+The first file above was taken from the same source as the original data set.  The second file above was taken from:
+
++ http://www.unitedstateszipcodes.org/zip-code-database/
+
+The data set mergers resulted in a data frame with following number of observations and features:
+
+```{r echo=FALSE,  message=FALSE, warning=FALSE}
+dim(pres_df)
+```
+
+Some variables of import resulted from the mergers: the *gender* of the political candidates, the *politcal affiliation* of the political candidates, and the *counties* of the contributors.  58 counties exist within California, whereas 41,746 zip-codes exist within California. 58 counties is more manageable from an examination standpoint.
+
+Utilizing these new variables, I determined that the minimum IFC of -10K was from Fresno County and for the presidential hopeful Ben Carson, a Republican. The IFC was refunded to the contributor, who is the owner of Harris Farms Inc, from which the famed Harris Beef might originate.  The vast majority of IFCs are around $100 (9,356), the cash maximum, and $2700 (5,978) the IFC maximum. 
+
+### Histograms of IFCs
+
+```{r echo=FALSE,fig.width=11, fig.height=7, message=FALSE, warning=FALSE,histogram_of_IFCs}
+# Histogram of IFCs
+p1 <- ggplot(aes(contb_receipt_amt), 
+                  data = pres_df)+ 
+  geom_histogram(binwidth = 100, color = 'black', fill = '#F79420') + 
+  xlab('IFCs')+
+  geom_vline(xintercept = median(pres_df$contb_receipt_amt), 
+             linetype=1, color = 'blue', alpha=0.5) +
+  geom_vline(xintercept = quantile(pres_df$contb_receipt_amt, 0.75), 
+             linetype='longdash', color = 'blue', alpha=0.5) +
+  geom_vline(xintercept = quantile(pres_df$contb_receipt_amt, 0.25), 
+             linetype='longdash', color = 'blue', alpha=0.5)
+
+#p1 + ggtitle("Plot 1: Histogram of IFCs with Median, 75% and 25% Quantile")
+
+p2 <- p1 + coord_cartesian(xlim = c(0,3000))+
+  scale_x_discrete(breaks= seq(0,3000,1000))
+  
+#p2 + ggtitle("Plot 2: Zoom-in Histogram of IFCs with Median, 75% and 25% Quantile")
+
+grid.arrange(p1 + ggtitle("Plot 1: Histogram of IFCs"),
+             p2 + ggtitle("Plot 2: Zoom-in Histogram of IFCs"),
+             nrow=1)
+```
+
+Histogram plot (1) of the IFCs reveals a potential multimodal distribution. Maybe, perhaps, an FEC maximum IFC exists around the peak between $2K and $3K. A search produced the following FEC mandates:
+
++ $2,700 per election to a Federal candidate or the candidate's campaign committee 
+
++ $5,000 per calendar year to a Political Action Committee (PAC) 
+
++ $10,000 per calendar year to a State or local party committee 
+
++ $34,400 per calendar year to a national party committee 
+
++ $100 in currency (cash) to any political committee, with anonymous cash contributions not exceeding $50
+
+This seems to provide an explanation for why a discrete multimodal distribution exists. Histogram plot (2) is a zoom in of plot (1). Blue line is median, and dashed blue lines are 25% and 75% quantiles. The time has come to facet:
+
+```{r echo=FALSE, fig.width=11, fig.height=7, message=FALSE, warning=FALSE, facet}
+p3 <- p2+facet_grid(cand_pty_aff~sex)+ 
+  ggtitle("Plot 3: Facet Histogram - Gender, Party")
+p3
+```
+
+Facet plot (3) shows more IFCs for male candidates than for female candidates. This is not surprising since the number of women in the presidential race is two. Facet plot (3) shows more IFCs for the Democratic Party.  This is not surprising based on the descriptive summary above.  The distribution of IFCs shows the stark difference in money between the two candidates who are women. 
+
+
+```{r echo=FALSE, fig.width=11, fig.height=7, message=FALSE, warning=FALSE, facet_two}
+p4 <- p2+facet_wrap(~election_tp, nrow=1)+ 
+  ggtitle("Plot 4: Facet Histogram - Election_tp") +
+  scale_y_continuous(trans = "log10", name ="log counts")
+p4
+```
+
+Facet plot (4) shows the number of IFC are greatest for the election form P2016, the primary of 2016.  The other forms are G2016, O2016, NaN, and P2018.  "G" stands for General; "O" stands for other. Most of the counts are going into the primary of 2016. A case could be made for reducing the data to only P2016. 
+
+```{r echo=FALSE, fig.width=11, fig.height=7, message=FALSE, warning=FALSE, facet_three}
+p5 <- ggplot(aes(contb_receipt_amt), 
+                  data = filter(pres_df, pres_df$contb_receipt_amt>1.))+ 
+  geom_histogram(binwidth = 50, color = 'black', fill = '#F79420') + 
+  xlab('IFCs')+ coord_cartesian(xlim = c(0,3000))+ 
+  scale_x_discrete(breaks= seq(0,3000,500))+
+  facet_wrap(~cand_nm, nrow = 7)+ ggtitle("Plot 5: Facet Histogram - Candidates") +
+  scale_y_continuous(trans = "log10", name ="log counts")
+p5 
+```
+
+Facet Plot (5) shows the data more like a bathtub distribution. The peaks seem for the most part at the maximum-allowed-cash IFC and allowed-maximum IFC per year.  A notable exception are the 1K contributions.  
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, normality}
+#density
+#grid.arrange( plot(density(pres_df$contb_receipt_amt)),
+#             qqnorm(pres_df$contb_receipt_amt), ncol = 2, top = "Blah")
+plot(density(pres_df$contb_receipt_amt), main = "Plot 6: Density of IFCs")
+qqnorm(pres_df$contb_receipt_amt, main = "Plot 7: Normal Q-Q Plot of IFCs")
+```
+
+Kernel density plot (6) and q-q plot (7) of IFCs seems to corroborate with multimodal distribution and non-linearity assumption . 
+
+```{r echo=FALSE, fig.width=11, fig.height=7, message=FALSE, warning=FALSE, log_tran_and_sine_log_tran_of_IFCs}
+p8 <- ggplot(aes(contb_receipt_amt), 
+                  data = filter(pres_df, pres_df$contb_receipt_amt>1.))+
+  geom_histogram(color = 'black', fill = '#F79420')+
+  scale_x_log10(breaks = c(10, 100, 1000, 10000))+
+  ggtitle("Plot 8: Log Transformation of IFCs")+
+  scale_y_continuous(trans = "log10", name = "log counts")
+
+# function from website:
+# http://www.r-statistics.com/2013/05/log-transformations-for-skewed-and-wide-distributions-from-practical-data-science-with-r/
+sine_log10 = function(x) {
+ifelse(abs(x) <= 1, 0, sign(x)*log10(abs(x)))
+}
+
+p9 <- ggplot(aes(sine_log10(contb_receipt_amt)), 
+                  data = filter(pres_df, pres_df$contb_receipt_amt>1.))+
+  geom_histogram(color = 'black', fill = '#F79420')+
+  scale_x_log10(breaks = c(10, 100, 1000, 10000))+
+  ggtitle("Plot 9: Sine Log Transformation of IFCs") +
+  scale_y_continuous(trans = "log10", name ="log counts")
+
+grid.arrange(p8,p9, nrow=1)
+```
+
+Log transformation plot (8) and sine-log transformation plot (9) of IFCs seems to make the distribution look more symmetric. The X-axes of plots (8,9) are different; the negative IFC values are more apparent in these plots.   
+
+## County Information
+
+```{r fig.width=11, fig.height=7, echo=FALSE, message=FALSE, warning=FALSE, IFCs_per_Counties}
+# Getting modal peaks
+hist_qp_df <- ggplot_build(p1)$data[[1]]
+#head(arrange(hist_qp_df, desc(count)))
+  
+# quick plot of counts per county and party
+p10 <- qplot(county, data = pres_df, fill = cand_pty_aff,
+      main = " Plot 10: IFC Log Counts Grouped per County and Split per Party")+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+        axis.ticks = element_blank())+
+  scale_fill_manual(values=c("#0000FF","#FF0000"),
+                    name = "Party",
+                    labels=c("Democratic Party",
+                             "Republican Party"))+
+  scale_y_continuous(trans="log10", name="log counts") 
+
+# sum and median per county per party  
+#detach("package:tidyr", unload=TRUE)
+#detach("package:plyr", unload=TRUE)
+
+stats.county <- pres_df %>%
+  group_by(county, cand_pty_aff) %>%
+  summarise(IFC_sum = sum(contb_receipt_amt),
+            IFC_median = median(contb_receipt_amt),
+            IFC_mean = mean(contb_receipt_amt),
+            IFC_var = var(contb_receipt_amt),
+            count.n = n()) %>%
+  arrange(IFC_sum)
+
+#stats.county
+
+p11 <- ggplot(aes(x = county, y = IFC_sum, fill = cand_pty_aff), 
+             data = stats.county) + 
+  geom_bar(stat = "identity", position=position_dodge()) +  
+  ggtitle("Plot 11: IFC log sum Grouped per County and Split per Party")+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+        axis.ticks = element_blank())+
+  scale_fill_manual(values=c("#0000FF","#FF0000"),
+                    name = "Party",
+                    labels=c("Democratic Party",
+                             "Republican Party")) + 
+scale_y_continuous(trans="log10", name="log sum")
+
+p12 <- ggplot(aes(x = county, y = IFC_var, fill = cand_pty_aff), 
+             data = stats.county) + 
+  geom_bar(stat = "identity", position=position_dodge()) +  
+  ggtitle("Plot 12: IFC Log Variance per County and Split per Party")+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1),
+        axis.ticks = element_blank())+
+  scale_fill_manual(values=c("#0000FF","#FF0000"),
+                    name = "Party",
+                    labels=c("Democratic Party",
+                             "Republican Party"))+
+ scale_y_continuous(trans="log10", name="log var")
+
+p10
+p11
+p12
+
+#grid.arrange(p7,p8, p9, ncol=1)
+# Double checking
+#by(pres_df$contb_receipt_amt, pres_df$county, sum)
+#by(stats.county$IFC_sum,stats.county$cand_pty_aff, summary)
+#summary(pres_df$county)
+#summary(stats.county)
+```
+
+Plot (10) shows IFC log counts grouped per county and split by party. The number of IFCs depends on the county.  Plot (11) shows IFC log summations grouped per county and split by party. The summation of IFCs depends on the county.  Plot (12) shows IFC log variance grouped per county and split by party. Visually on plot 12, the Republican party seems to have a greater variance of contributions, in general. Data from Plot (10) show some counties [ Alpine, Colusa, and Modoc ] made no IFCs for Democratic Party. Sierra county made contributions, but the log scale obscures this. 
+
+I can see that the most populated county in California, the Los Angeles County, has the most counts for both Democratic and Republican candidates. A quick query reveals that the IFC sum for the Democratic Party in Los Angeles is the largest.  This seems to be consistent with the previous bar charts.  Another query into the minimum sum IFC per county is $150 with a median IFC of $50 and a count of 3. Alpine county, which happens to be the least populated county in California, has the distinction of these statistics. Candidate data is what follows: 
+
+### Candidate Information
+
+```{r fig.width=11, fig.height=7, echo=FALSE,  message=FALSE, warning=FALSE, IFCs_per_Cand}
+# quick plot of count per candidate
+p13 <- qplot(cand_nm, data = pres_df)+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))+
+  ggtitle("Plot 13: IFC log Counts per Candidates")+
+  scale_y_continuous(trans="log10", name="log counts") 
+
+stats.cand <- pres_df %>%
+  group_by(cand_nm) %>%
+  summarise(IFC_sum = sum(contb_receipt_amt),
+            IFC_median = median(contb_receipt_amt),
+            IFC_mean = mean(contb_receipt_amt),
+            count.n = n())%>%
+  arrange(IFC_sum)
+
+#stats.cand
+
+p14 <- ggplot(aes(x = cand_nm, y = IFC_sum), 
+             data = stats.cand) + 
+  geom_histogram(stat = "identity") +  
+  ggtitle("Plot 14: IFC log sum per Candidates")+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))+
+  scale_y_continuous(trans="log10", name="log sum")
+
+p15 <- ggplot(aes(x = cand_nm, y = IFC_median), 
+             data = stats.cand) + 
+  geom_histogram(stat = "identity") +  
+  ggtitle("Plot 15: IFC median per Candidate")+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+
+p13
+p14
+p15
+
+#grid.arrange(p10,p11, p12, ncol=1)
+#summary(stats.cand)
+#by(pres_df$contb_receipt_amt,pres_df$cand_nm, sum)
+
+```
+
+Plot (13) shows counts per candidates.  Plot (13) shows Hillary Rodham Clinton in the lead with Bernard Sanders in second. For the Republican party, Ben Carson seems to have the most counts with Ted Cruz in second.  Plot (14) shows IFC summations per candidate.  For the Democrats, Clinton is in the lead here too, whereas for the Republicans, Bush is in the lead.  This tells me that number of contributions doesn't correspond to summation of contributions.  Plot (15) shows IFC median per candidate. Rick Perry and Chris Christie seems on average to have the highest median amount of money contributed. Bernie Sanders, Ted Cruz, and Ben Carson have the lowest. Temporal data is what follows next: 
+
+### Contribution Receipt Information
+
+```{r fig.width=11, fig.height=7, echo=FALSE,  message=FALSE, warning=FALSE, Counts_per_time}
+# quick plot of time of contribution
+#qplot(contb_receipt_dt, data = pres_df,
+#      main = " Plot 13: Counts per Date of contribution")+
+#  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) 
+```  
+[comment]: <> (I have to correct the time data, which is non-sequential here in plot 13.)  
+
+```{r fig.width=11, fig.height=7, echo=FALSE,  message=FALSE, warning=FALSE, Fixing_Counts_per_time}
+# recast time of dataframe and replot
+pres_df$contb_receipt_dt <- strptime(pres_df$contb_receipt_dt,
+                                     "%d-%b-%y")
+#Kinda fixes POSIXlt, POSIXt issues
+pres_df$contb_receipt_dt <- as.Date(pres_df$contb_receipt_dt)
+pres_df$contb_receipt_dt.x <- as.Date(pres_df$contb_receipt_dt)
+
+#qplot(contb_receipt_dt.x, data = pres_df)+
+#  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+#  scale_x_date(breaks = "month")
+
+# replot with date correction of count of time when contributed
+p16 <- ggplot(aes(contb_receipt_dt), data=pres_df)+
+  geom_bar(binwidth=10, color = 'black', fill = '#F79420')+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  scale_x_date(breaks = "month")+
+  ggtitle(" Plot 16: Counts per Receipt Date")
+
+p17 <- ggplot(aes(x = contb_receipt_dt, y = ..density../sum(..density..)), 
+       data = pres_df) +
+  geom_freqpoly(aes(color = cand_pty_aff), binwidth=1) +
+  xlab('date') + 
+  ylab('density') +
+  ggtitle(" Plot 17: Counts per Receipt Date")
+
+p18 <- ggplot(aes(x = contb_receipt_dt, y = contb_receipt_amt ), 
+             data = pres_df) + 
+  geom_bar(stat = "identity", binwidth = 100, 
+           color = 'black', fill = '#F79420') +  
+  ggtitle("Plot 18: IFCs vs. Dates")+
+   scale_x_date(breaks = "month") + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+   
+p16
+p17
+p18
+
+#+geom_raster()
+#grid.arrange(p14,p14a,p14b, ncol=1)
+```
+
+Plot (16) shows a peak around the 30th of September, which is when South Carolina finalizes the ballot for the primary. By recasting the receipt dates into date class and adjusting the bin width, the re-plot of the counts of IFC receipt dates shows a steady increase of counts with time with a peak during the month of September, corroborating with the previous plot. More people are contributing as the primary approaches.  
+
+### Data clean-up due to Negative IFCs 
+Some data clean-up was attempted to reduce the number of variables and extraneous data: 
+
++ Elimination of negative contributions and corresponding positive contributions that were labeled as such or gleaned from an examination of other variables within the selected subset of the data set. 
+
++ Data that had a degree of synonymity or redundancy
+
++ Data not pertinent to the initial data set in order to keep scope within the prescribed data set choice and reduce project ambiguity. 
+
+Only 10 variables are of import from the merged data sets. They are: cand_nm, contbr_nm, contbr_city, contbr_employer, contbr_occupation, contb_receipt_amt, contb_receipt_dt, cand_pty_aff, sex, and county.  I believe that I created a tiddy dataframe, which is called pres_df.clean.
+
+```{r fig.width=11, fig.height=7, echo=FALSE, message=FALSE, warning=FALSE, Atempt_Reconciling_Negative_FCs}
+# group by name, determine net contribution
+net.contbr <- pres_df %>%
+  group_by(contbr_nm,cand_nm, cand_pty_aff, sex, county) %>%
+  summarise(contbr_amt_median = median(contb_receipt_amt),
+            contbr_occupation = last(contbr_occupation),
+            contbr_amt_sum = sum(contb_receipt_amt), 
+            count.n = n()) %>%
+  arrange(desc(contbr_amt_sum))
+
+# plot net IFC 
+p20 <- ggplot( aes(contbr_amt_sum), 
+              data = filter(net.contbr,contbr_amt_sum > 1.)) + 
+  geom_histogram(binwidth = 70, color = 'black', fill = '#F79420') + 
+  xlab('net IFCs per contributor')+
+  ggtitle("Plot 20: Histogram of Net IFCs per Contributor")+
+  coord_cartesian(xlim = c(0,10000))+
+  scale_x_discrete(breaks= c(100,2700,5000, 10000)) + 
+  scale_y_continuous(trans = "log10", name = "log count" )
+
+p21 <- ggplot(aes(contbr_amt_sum), 
+                      data = na.omit(filter(net.contbr,contbr_amt_sum > 1.))) + 
+  geom_histogram(color = 'black', fill = '#F79420', binwidth = 0.05) +
+  scale_x_log10(breaks = c(10, 1000, 2700, 10000)) +
+  ggtitle("Plot 21: Log Trans of Net IFCs per Contributor") + 
+  scale_y_continuous(trans = "log10", name = "log count")
+
+grid.arrange(p20,p21, ncol=1)
+```
+
+After trying to manipulate the data set to remove negative IFCs and their corresponding positive IFCs, I discovered that some of the negative IFCs had no corresponding positive IFCs and that some of the negative IFCs had different receipt dates, making matching difficult. I grouped by contributor and summed up their contributions to try to reconcile negative IFCs. 
+
+Grouping the data by contributor's name and then determining his or hers net contributed IFC, I discovered that 96 contributors had a net negative IFC, meaning that their net contribution was negative -- somehow. The average negative contribution was -$1,452; the maximum negative contribution was -$14.35; and the minimum negative contribution was -$5,400. Similarly, I discovered that 91 contributors had a net zero IFC. For comparison purposes, 24,886 unique contributors exist. I eliminated amounts less than or equal to zero. 
+
+A histogram plot (20) of net IFCs produced results that differed from the histogram of IFCs produced earlier (plot (1,2)). Notably, the peak IFCs are different. The mode IFC for the histogram that was produced earlier was $25, whereas the mode IFC for the histogram that was produced with net IFCs seems equal to $2,700. The statistics are also different. The statistics from this summary are the following: the maximum net IFC ($21.6K), the first quantile ($244), the median ($500), and the third quantile ($2,633). These results seem more in line with the FEC rules.  The results here convey that the statistics are greater when grouped per the contributor's net contribution than when not grouping per the contributor's individual contribution. Plot (21) is a log transformation of net IFCs per contributor. The data seem more symmetric. 
+
+### Occupation and Employment of Contributor Information
+
+Below is bar chart of the occupations of the contributors and the employers of the contributors. The plots are samples of the population. The population is too big to depict on the x-axis with ~9,407 employers and ~4,464 occupations.    
+
+```{r echo=FALSE, fig.width=11, fig.height=7,  message=FALSE, warning=FALSE, univariates}
+p22 <- qplot(contbr_occupation, 
+             data = sample_n(pres_df, 100, replace = TRUE),
+              fill = cand_pty_aff, 
+             main = "Plot 22: Barchart of Contributor Occupations") + 
+  theme(axis.text.x = element_text(angle = 90, 
+                                   hjust = 1, 
+                                   vjust = 0.5), 
+        axis.ticks = element_blank()) +
+  scale_y_continuous(trans = "log10", name = "log count") +
+  scale_fill_manual(values=c("#0000FF","#FF0000"),
+                    name = "Party",
+                    labels=c("Democratic Party",
+                             "Republican Party"))
+
+p23 <- qplot(contbr_employer, 
+             data = sample_n(pres_df, 100, replace = TRUE),
+              fill = cand_pty_aff, 
+             main = "Plot 23: Barchart of Contributor Employeer") + 
+  theme(axis.text.x = element_text(angle = 90, 
+                                   hjust = 1, 
+                                   vjust = 0.5), 
+        axis.ticks = element_blank()) +
+  scale_y_continuous(trans = "log10", name = "log count") +
+  scale_fill_manual(values=c("#0000FF","#FF0000"),
+                    name = "Party",
+                    labels=c("Democratic Party",
+                             "Republican Party"))
+
+p22
+p23
+```
+
+Seeing too many categories for occupations, I reduced the categories to four: N/A, retired, unemployed, and working. Retired peoples of CA contribute more to Republican candidates, both in quantity and contribution. This is a surprise to me.  Unemployed and working peoples contribute more to Democratic candidates than Republican candidates. Doing the same plot for employers seems redundant to me. 
+
+```{r echo=FALSE, fig.width=11, fig.height=7, message=FALSE, warning=FALSE, Cleaning_up_Data}
+# (2) and (3)
+# Clean up data 
+# Date Class conversion to character (not needed)
+pres_df$contb_receipt_dt.y <- as.character(pres_df$contb_receipt_dt.x)
+pres_df.clean <- select(pres_df,
+                        cand_nm,
+                        contbr_nm,
+                        contbr_city,
+                        contbr_employer,
+                        contbr_occupation,
+                        contb_receipt_amt,
+                        contb_receipt_dt,
+                        cand_pty_aff,
+                        sex,
+                        county,
+                        receipt_desc,
+                        election_tp,
+                        form_tp)
+
+# contributor occupation rank
+contbr.occupation.count <- pres_df.clean %>%
+  group_by(contbr_occupation) %>%
+  summarise(count.n = n()) %>%
+  arrange(desc(count.n))
+#contbr.occupation.count
+
+group.occup.pty <- pres_df.clean %>%
+group_by(contbr_occupation, cand_pty_aff, cand_nm) %>%
+summarise(ifc_sum = sum(contb_receipt_amt),
+  count.n = n()) %>%
+arrange(desc(count.n))
+
+#234567890123456789012345678901234567901234567890123456789012345678901234567890
+if (T) {
+  
+  #########################  group occupations  ###############################
+  no_info = c("INFORMATION REQUESTED PER BEST EFFORTS", 
+              "INFORMATION REQUESTED", "NOT AVAILABLE")
+  unemp = c("NOT EMPLOYED", "NONE", "UNEMPLOYED")
+  find1 <- paste(no_info, collapse = "|")
+  #find1 <- paste("[^",find, "]",sep = "")
+  
+  #find1
+  find2 <- paste(unemp, collapse = "|")
+  #find2
+  
+  # replace no_info list entries with N/A 
+  pres_df.clean$job <- gsub(find1, "N/A", pres_df.clean$contbr_occupation, 
+                            ignore.case = TRUE)
+  select(pres_df.clean,contbr_occupation, job)
+  summary(pres_df.clean$job)
+  
+  # replace list unemp with unemployed
+  pres_df.clean$job <- gsub(find2, "unemployed", pres_df.clean$job, 
+                            ignore.case = TRUE)
+  
+  #select(pres_df.clean,contbr_occupation, job)
+  #summary(pres_df.clean$job)
+  
+  # replace any retired string with retired word
+  pres_df.clean$job <- gsub(".*RETIRED.*", "retired", pres_df.clean$job, ignore.case = TRUE)
+  
+  #select(pres_df.clean,contbr_occupation, job)
+  #summary(pres_df.clean$job)
+  
+  # if not retired or n/a or unemployed, then working
+  find3 <- "^(?!RETIRED|N/A|unemployed).*$"
+  pres_df.clean$job <- gsub(find3, "working", pres_df.clean$job, 
+                            ignore.case = TRUE, perl = T)
+  pres_df.clean$job <- as.factor(pres_df.clean$job)
+  
+  #select(pres_df.clean,contbr_occupation, job)
+  pres_df.clean$job <- as.factor((pres_df.clean$job))
+  #summary(na.omit(pres_df.clean$job))
+  #summary(pres_df.clean$contbr_occupation)
+  
+  # ---------------------- net IFC occupation ----------------------------- #
+  # replace no_info list entries with N/A 
+  net.contbr$job <- gsub(find1, "N/A", net.contbr$contbr_occupation, 
+                         ignore.case = TRUE)
+  select(net.contbr,contbr_occupation, job)
+  summary(net.contbr$job)
+  
+  # replace list unemp with unemployed
+  net.contbr$job <- gsub(find2, "unemployed", net.contbr$job, 
+                         ignore.case = TRUE)
+  
+  #select(net.contbr,contbr_occupation, job)
+  #summary(net.contbr$job)
+  
+  # replace any retired string with retired word
+  net.contbr$job <- gsub(".*RETIRED.*", "retired", net.contbr$job, 
+                         ignore.case = TRUE)
+  
+  #select(net.contbr,contbr_occupation, job)
+  #summary(net.contbr$job)
+  
+  # if not retired or n/a or unemployed, then working
+  find3 <- "^(?!RETIRED|N/A|unemployed).*$"
+  net.contbr$job <- gsub(find3, "working", net.contbr$job, 
+                         ignore.case = TRUE, perl = T)
+  net.contbr$job <- as.factor(net.contbr$job)
+  
+  #select(net.contbr,contbr_occupation, job)
+  net.contbr$job <- as.factor((net.contbr$job))
+  #summary(na.omit(net.contbr$job))
+  #summary(net.contbr$contbr_occupation)
+}
+
+if (FALSE) {
+no_info = c("INFORMATION REQUESTED PER BEST EFFORTS", "INFORMATION REQUESTED", "", "NOT AVAILABLE")
+unemployed = c("NOT EMPLOYED", "NONE")
+
+pres_df.clean[is.na(pres_df.clean)] <- "N/A"
+pres_df.clean$job <- "N/A"
+pres_df.clean$contbr_occupation <- as.character(pres_df.clean$contbr_occupation)
+
+for (i in seq_along(pres_df.clean$contbr_occupation)){
+  for (j in seq_along(no_info)){
+    if (pres_df.clean$contbr_occupation[[i]] == no_info[[j]]) {
+      pres_df.clean$job[[i]] <- "N/A" 
+    } else pres_df.clean$job[[i]] <- pres_df.clean$contbr_occupation[[i]]
+  }
+  for (k in seq_along(unemployed)){
+    if (pres_df.clean$contbr_occupation[[i]] == unemployed[[k]]) {
+      pres_df.clean$job[[i]] <-  "UNEMPLOYED"
+    } else pres_df.clean$job[[i]] <- pres_df.clean$contbr_occupation[[i]]
+  }
+}
+
+desired = c("RETIRED","UNEMPLOYED", "N/A")
+
+for (i in seq_along(pres_df.clean$job)) {
+  for (j in seq_along(desired)) {
+    if (pres_df.clean$job[[i]] != desired[[j]]) {
+       pres_df.clean$job[[i]] <- "EMPLOYED"
+    } else pres_df.clean$job[[i]] <- pres_df.clean$job[[i]]
+  }
+}
+
+head(pres_df.clean$job)
+
+for (i in seq_along(pres_df.clean$contbr_occupation)){
+  print(pres_df.clean$contbr_occupation[[i]])
+}
+}
+if (FALSE) {
+contbr.occupation.count <- pres_df.clean %>%
+  group_by(contbr_occupation) %>%
+  summarise(count.n = n()) %>%
+  arrange(desc(count.n))  
+  
+not_here <- "INFORMATION REQUESTED PER BEST EFFORTS|INFORMATION REQUESTED|NOT AVAILABLE|^$|"
+not_working <- "NOT EMPLOYED|NONE"
+contbr.occupation.count$jobby <- gsub(not_here, "NA", contbr.occupation.count$contbr_occupation, ignore.case = T)
+contbr.occupation.count$jobby <- gsub(not_working, "UNEMPLOYED", contbr.occupation.count$jobby, ignore.case = T)
+contbr.occupation.count$jobby_two <- gsub("[^RETIRED|NA|UNEMPLOYED]", "WORKING", contbr.occupation.count$jobby, ignore.case = T)
+contbr.occupation.count$jobby <- substr(contbr.occupation.count$jobby , regexpr('WORKING',contbr.occupation.count$jobby), regexpr('WORKING',contbr.occupation.count$jobby)+6)
+
+head(contbr.occupation.count)
+
+summary(contbr.occupation.count$jobby)
+
+}
+if (FALSE) {
+  for (k in 0:length(pres_df.clean$jobby)){
+    if ((k %in% no_info))
+    #pres_df.clean$jobby[k]
+    #}}
+    #for (j in no_info) 
+    #pres_df.clean$jobby <- trimws(gsub(j, "N/A", pres_df.clean$contbr_occupation, ignore.case = T))
+    #}
+    for (k in pres_df.clean$contbr_occupation) {
+      if (k != "N/A" | k != "UNEMPLOYED"){
+        pres_df.clean$jobby[k] = "EMPLOYED"  
+      }
+  }
+  }            
+}
+
+#filter(contbr.occupation.count,contbr_occupation == "N/A")
+retired <- pres_df[pres_df$contbr_occupation=="RETIRED",]
+#by(retired$contb_receipt_amt, retired$cand_pty_aff,summary)
+#by(retired$contb_receipt_amt, retired$cand_pty_aff,sum)
+#by(pres_df$contb_receipt_amt, pres_df$cand_pty_aff,sum)
+
+retired_two <- net.contbr[net.contbr$occupation=="RETIRED" & net.contbr$contbr_amt_sum > 0,]
+#by(retired_two$contbr_amt_sum, retired_two$party,summary)
+#by(retired_two$contbr_amt_sum, retired_two$party,sum)
+#contbr.occupation.count[contbr.occupation.count$contbr_occupation == "RETIRED",]
+
+p24 <- qplot(job, data = na.omit(pres_df.clean),
+              fill = cand_pty_aff, 
+             main = "Plot 24: Barchart of Contributor Occupations") + 
+  theme(axis.ticks = element_blank()) +
+  scale_y_continuous( #trans = "log10", 
+                      name = "count") +
+  scale_fill_manual(values=c("#0000FF","#FF0000"),
+                    name = "Party",
+                    labels=c("Democratic Party",
+                             "Republican Party"))
+p24
+
+stats.job <- pres_df.clean %>%
+  group_by(job, cand_pty_aff) %>%
+  summarise(IFC_sum = sum(contb_receipt_amt),
+            IFC_median = median(contb_receipt_amt),
+            IFC_mean = mean(contb_receipt_amt),
+            IFC_var = var(contb_receipt_amt),
+            count.n = n()) %>%
+  arrange(IFC_sum)
+
+p25 <- ggplot(aes(x = job, y = IFC_sum, fill = cand_pty_aff), 
+             data = na.omit(stats.job)) + 
+  geom_bar(stat = "identity", position=position_dodge()) +  
+  ggtitle("Plot 25: IFC log sum Grouped per Occupation and Split per Party")+
+  theme(axis.ticks = element_blank())+
+  scale_fill_manual(values=c("#0000FF","#FF0000"),
+                    name = "Party",
+                    labels=c("Democratic Party",
+                             "Republican Party")) #+ 
+ #scale_y_continuous(trans="log10", name="log sum")
+
+
+# contributor employer rank
+contbr.employer.count <- pres_df.clean %>%
+  group_by(contbr_employer) %>%
+  summarise(count.n = n()) %>%
+  arrange(desc(count.n))
+
+# 
+net.contbr.party <- pres_df.clean %>%
+  filter(cand_pty_aff == "Republican Party") %>%
+  group_by(contbr_nm) %>%
+  summarise(contbr_amt_median = median(contb_receipt_amt),
+            contbr_amt_sum = sum(contb_receipt_amt), 
+            count.n = n()) %>%
+  arrange(desc(contbr_amt_sum))
+
+#summary statistics of pres_df.clean
+#summary(pres_df.clean)
+```
+
+### Box Plot - Gender, Party, Gender Information
+
+```{r echo=FALSE,  fig.width=11, fig.height=7, message=FALSE, warning=FALSE, IFC_statistics_per_Gender_or_Party}
+tapply(pres_df.clean$contb_receipt_amt,
+       pres_df.clean$cand_pty_aff, summary)
+tapply(pres_df.clean$contb_receipt_amt,
+       pres_df.clean$sex, summary)
+
+p26 <- qplot(x=sex, y=contb_receipt_amt,
+      data= pres_df.clean, main = "Plot 26 Boxplot per Candidate Gender",
+      ylab = "IFCs",
+      geom='boxplot') +
+      coord_cartesian(ylim = c(35 - 1.5*1315,
+                               1350 + 1.5*1315)) + 
+  stat_summary(fun.y = mean, geom = 'point', shape = 4)
+
+p27 <- qplot(x=cand_pty_aff, y=contb_receipt_amt,
+      data= pres_df.clean, main = "Plot 27 Boxplot per Candidate Party",
+       ylab = "IFCs", xlab = "Party",
+      geom='boxplot')+
+      coord_cartesian(ylim=c(35 - 1.5*265,
+                             300 + 1.5*265)) +
+  stat_summary(fun.y = mean, geom = 'point', shape = 4)
+
+grid.arrange(p26,p27, ncol=1)
+```
+
+Summary statistics and box plots of IFCs per gender or party are presented above. 
+
+The median IFC per candidate party appear the same ($100), although the interquantile range seems to be greater for the Democratic Party than for the Republican party, whereas the range seems to be greater for the Republican Party than for the Democratic Party. 
+
+The median IFC per candidate gender is greater for female candidates ($140) than male candidates ($100). The IFC interquantile range seems smaller for males candidates than female candidates. The IFC range is greater for male candidates than female candidates. 
+
+Outliers seem more prevalent for male candidates or for Republican Party candidates than for female candidates or for Democratic candidates. These box plots are not of counts but of IFCs. On average, female candidates seem to get higher IFCs than their male counterparts. This seems skewed do to the Hilary contributions. 
+ 
+ 
+```{r echo=FALSE, fig.width=11, fig.height=7, message=FALSE, warning=FALSE, IFCs_per_county}
+#by(pres_df.clean$contb_receipt_amt,
+#   pres_df.clean$county, summary)
+#length(unique(pres_df.clean$county))
+
+p28 <- qplot(x=county, y=contb_receipt_amt,
+      data= pres_df.clean, main = "Plot 28: Boxplot per County",
+      geom='boxplot', position = 'fill') + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))+
+  stat_summary(fun.y = mean, geom = 'point', shape = 4)
+
+#p28 + coord_flip()
+
+p29 <-  qplot(x=county, y=contb_receipt_amt,
+      data= pres_df.clean, main = "Plot 29: Zoom-in Boxplot per County",
+      geom='boxplot') + coord_cartesian(ylim=c(-10,
+                             1500)) + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  stat_summary(fun.y = mean, geom = 'point', shape = 4)
+
+#p29+coord_flip()
+  
+p28
+p29
+
+#grid.arrange(p20,p21, ncol=1)
+```
+
+Summary statistics of IFCs per county are presented above. The LA County, SF County, and San Mateo County have greater interquantile ranges than other counties. San Mateo seems to have the highest median IFC.   
+
+```{r echo=FALSE, fig.width=11, fig.height=7, message=FALSE, warning=FALSE, BoxPlot_Job}
+p29a <-  qplot(x=job, y=contb_receipt_amt,
+      data= na.omit(pres_df.clean), 
+      main = "Plot 29a: Boxplot per Occupation",
+      geom='boxplot') + coord_cartesian(ylim=c(-10,
+                             500)) + 
+  stat_summary(fun.y = mean, geom = 'point', shape = 4)
+```
+Box plot of occupation shows people who remain anonymous (N/A) on average contribute more. The lowest contributions come from the unemployed.  
+
+### Nominal, Continuous Bivariate
+#### IFCs vs. Time
+```{r fig.width=11, fig.height=7, echo=FALSE,  message=FALSE, warning=FALSE, Categorical_Bivariate}
+# group by date, sum amounts per date 
+stats.date <- pres_df.clean %>%
+  group_by(contb_receipt_dt) %>%
+  summarise(IFC_sum = sum(contb_receipt_amt),
+            IFC_median = median(contb_receipt_amt),
+            IFC_mean = mean(contb_receipt_amt),
+            IFC_sd = sd(contb_receipt_amt),
+            count.n = n()) %>%
+  arrange(desc(contb_receipt_dt))
+
+# group by contributor, take last receipt date
+stats.contr.date <- pres_df.clean %>%
+  group_by(contbr_nm) %>%
+  summarise(date = last(contb_receipt_dt),
+            IFC_sum = sum(contb_receipt_amt),
+            IFC_median = median(contb_receipt_amt),
+            IFC_mean = mean(contb_receipt_amt),
+            IFC_var = var(contb_receipt_amt),
+            count.n = n()) %>%
+  arrange(desc(date))
+
+stats.contr.date <- filter(stats.contr.date, IFC_sum > 0)
+
+p30 <- qplot(x=contb_receipt_dt,
+      y=contb_receipt_amt, 
+      data = subset(pres_df.clean, 
+                    contb_receipt_amt != 0),
+      main = "Plot 30: IFC vs. Date") + 
+      coord_cartesian(ylim=c(-1000,
+                             1000))
+
+p31 <- qplot(x=contb_receipt_dt,
+      y=IFC_sum, 
+      data = filter(stats.date, IFC_sum != 0),
+      main = "Plot 31: IFC sum vs. Date") +
+      scale_y_log10() + 
+      geom_smooth(method = 'lm', color = 'red')
+
+p32 <- qplot(x=date,
+      y=IFC_sum, 
+      data = filter(stats.contr.date, IFC_sum != 0),
+      main = "Plot 32: IFC sum vs. Last IFC Date") +
+      scale_y_log10()
+
+grid.arrange(p30 + geom_bin2d(),p32 + geom_bin2d(), nrow=1)
+grid.arrange(p30,p31,p32, nrow=1)
+```
+
+Plot (30) shows IFC versus contribution date, excluding IFCs equal to zero. Fourteen (14) IFCs were zero. The variance seems to be increasing with time. The 2-D histogram shows that a peak between +250 and -250.   
+
+Plot (31) shows IFC net sums grouped by date, excluding IFC sums equal to zero.  I have no explanation for what seems like a mostly positive net sum IFC versus contribution date for the plot 2.  I cannot fathom why FEC accounting practices would possibly choose to ensure that a net positive IFC exists for each day a contribution was given.  
+
+Plot (32) shows IFC net sums grouped by contributor with the date of their most recent contribution, excluding IFC sums equal to zero.  Time data is discrete for both plots.  Plot 3 has striations around contribution limits.  Some over-plotting seems to exist for the plot (32). The 2D histogram shows the striations more abruptly. 
+
+```{r fig.width=11, fig.height=7, echo=FALSE,  message=FALSE, warning=FALSE, IFC_vs_sum_overplotting_and_jitter}
+
+p33 <- ggplot(aes(x=date, y=IFC_sum), data = stats.contr.date)+
+  geom_point(alpha=1/5, color = 'blue')+
+  ggtitle('Plot 33: IFC_sum vs. Last date') +
+  #geom_line(stat='summary', fun.y =  mean)
+  #geom_smooth(method = 'lm', color = 'red') +
+  scale_y_log10()
+
+p34 <- ggplot(aes(x=date, y=IFC_sum), data = stats.contr.date)+
+  geom_jitter(alpha=1/10, color = 'blue')+
+  scale_y_continuous(limits=c(0,2700),
+    breaks = c(0,500, 1000, 2700)) + 
+  ggtitle('Plot 34: IFC_sum vs. Last date') #+ 
+  #geom_line(stat='summary', fun.y =  mean)
+
+p35 <- ggplot(aes(x=date, y=IFC_sum), data = stats.contr.date)+
+  geom_point(position = position_jitter(w = 0.5, h=0.01),
+             alpha=0.05, color = 'blue')+
+  scale_y_continuous(limits=c(0,700),
+    breaks = seq(0,700,50)) + 
+  scale_x_date(limits = c(as.Date("2015-06-01"),
+                          as.Date("2015-10-01"))) +
+  ggtitle("Plot 35: IFC_sum vs. Last date")
+
+p36 <- p35 + coord_trans(y = 'sqrt') + 
+  ggtitle("Plot 36: IFC_sum vs. Last date") #+ 
+      #geom_smooth(method = 'lm', color = 'red')
+
+grid.arrange(p33,p34,p35, p36, nrow=2)
+```
+
+Plot (33) has an over-plotting correction, revealing striations of data between $5,000 and $100. Most of the data is below $5,000. Plot (34) has a more aggressive over-plotting correction with induced jitter and breaks per FEC limits, revealing more over-plotting between July and October 2015 and between $700 and $0. Jitter was used due to class time data having multiple intervals such as date,time, and date and time. Perhaps IFCs were tallied at the end of the day.  A closer examination with plot (35) of the over-plotted area looks to shows that most of the net IFCs are given in $50 increments. It seems contributors give money in multiples of 50. Plot (36) takes the square root of IFS sums, revealing data below $50, which wasn't visible until now. 
+
+```{r fig.width=11, fig.height=7, echo=FALSE,  message=FALSE, warning=FALSE, spine}
+
+plot(pres_df.clean$cand_pty_aff, 
+     pres_df.clean$job, ylab = "occupation", xlab = "party", 
+     main = "Plot 37 Spine: Occupation vs. Party")
+
+plot(as.factor(pres_df.clean$sex), 
+     pres_df.clean$job, ylab = "occupation", xlab = "candidate gender", 
+     main = "Plot 38 Spine: Occupation vs. Candidate Gender")
+#lablist.x<-as.vector(sort(unique(pres_df.clean$cand_nm)))
+#axis(1, at=seq(1, 25, by=1), labels = FALSE)
+#text(x = seq(1, 25, by=1), par("usr")[3] - 0.2, 
+#labels = lablist.x, srt = 90, pos = 1, xpd =T)
+```
+
+Spine plot (37) shows that working peoples are responsible for the majority of contributions to both parties. A huge difference exists among unemployed and retired peoples and the percentage of their contributions that make up the parties.  Spine plot (38) shows working peoples make up the majority of contributions as well for male or female candidates. Seems like the unemployed make up more of the share of male candidate's contributions. 
+
+## Multivariate Plots
+
+```{r fig.width=11, fig.height=7, echo=FALSE,  message=FALSE, warning=FALSE, Multivariate}
+getPalette = colorRampPalette(brewer.pal(8, "Dark2"))
+
+x = 0.1
+
+ggplot(data = pres_df.clean, aes(contb_receipt_dt, 
+                                 contb_receipt_amt, color = county)) + 
+   geom_point(alpha = x, position = position_jitter(h=0)) + 
+  scale_y_log10() + scale_color_manual(values = getPalette(58)) +
+theme(legend.position = "top") + guides(color=guide_legend(nrow=6)) +
+  xlab("Time") + ylab("IFC") + 
+  scale_x_date(limits = c(as.Date("2015-06-01"), 
+                          as.Date("2015-10-01"))) + 
+  ggtitle("Plot 38: IFCs vs. Time - County")
+
+ggplot(data = pres_df.clean, aes(contb_receipt_dt, contb_receipt_amt, 
+                                 color = cand_pty_aff)) + 
+   geom_point(alpha = x, position = position_jitter(h=0)) + 
+  scale_y_log10() + scale_color_manual(values = getPalette(2)) + 
+  theme(legend.position = "top") + 
+  guides(color=guide_legend(nrow=1)) +
+  xlab("Time") + ylab("IFC") + 
+  scale_x_date(limits = c(as.Date("2015-06-01"), 
+                          as.Date("2015-10-01"))) + 
+  ggtitle("Plot 39: IFCs vs. Time - Party")
+
+ggplot(data = pres_df.clean, aes(contb_receipt_dt, contb_receipt_amt, 
+                                 color = sex)) + 
+   geom_point(alpha = x, position = position_jitter(h=0)) + 
+  scale_y_log10() + scale_color_manual(values = getPalette(2)) +
+theme(legend.position = "top") + guides(color=guide_legend(nrow=1)) +
+  xlab("Time") + ylab("IFC") + 
+  scale_x_date(limits = c(as.Date("2015-06-01"), 
+                          as.Date("2015-10-01"))) + 
+  ggtitle("Plot 40: IFCs vs. Time - Gender")
+
+ggplot(data = pres_df.clean, aes(contb_receipt_dt, contb_receipt_amt, 
+                                 color = cand_nm)) + 
+   geom_point(alpha = x, position = position_jitter(h=0)) + 
+  scale_y_log10(breaks = c(100,1000,5000)) + 
+  scale_color_manual(values = getPalette(22)) +
+theme(legend.position = "top") + guides(color=guide_legend(nrow=3)) +
+  xlab("Time") + ylab("IFC") + 
+  scale_x_date(limits = c(as.Date("2015-06-01"), 
+                          as.Date("2015-10-01"))) + 
+  ggtitle("Plot 41: IFCs vs. Time - Candidate")
+
+ggplot(data = pres_df.clean, aes(cand_nm, contb_receipt_amt, color = job)) + 
+  geom_point(alpha = x, position = position_jitter(h=0)) +
+  scale_y_log10() + scale_color_manual(values = getPalette(4)) +
+theme(legend.position = "top") + guides(color=guide_legend(nrow=1)) + 
+    theme(axis.text.x = element_text(angle = 90, 
+                                   hjust = 1, 
+                                   vjust = 0.5), 
+        axis.ticks = element_blank())+
+  ggtitle("Plot 42: IFCs vs. Candidate - Occupation")
+
+# geom_point(alpha = 1/20, position = position_jitter(h=0))
+#qplot(x = contb_receipt_amt, data = pres_df.clean, fill = cand_pty_aff)
+```
+These don't seem to produce anything discernible. 
+
+```{r fig.width=11, fig.height=7, echo=FALSE,  message=FALSE, warning=FALSE, Density}
+
+#density plots
+qplot(contb_receipt_amt, data = na.omit(pres_df.clean), binwidth = 0.01,
+      color = cand_pty_aff, geom = 'density') + scale_x_log10() +
+  theme(legend.position = "top") + guides(color=guide_legend(nrow=1))
+
+qplot(contb_receipt_amt, data = pres_df.clean, binwidth = 0.01,
+      color = county, geom = 'density') +
+  scale_x_log10() +  theme(legend.position = "top") + guides(color=guide_legend(nrow=5))
+
+qplot(contb_receipt_amt, data = pres_df.clean, binwidth = 0.01,
+      color = cand_nm, geom = 'density') +
+  scale_x_log10() + theme(legend.position = "top") + guides(color=guide_legend(nrow=3))
+
+qplot(contb_receipt_amt, data = pres_df.clean, binwidth = 0.01,
+      color = job, geom = 'density') +
+  scale_x_log10() + theme(legend.position = "top") + guides(color=guide_legend(nrow=1))
+
+```
+These support the contribution buckets or striations witnessed in other plots, and the finding found in the spline plots. 
+
+```{r fig.width=11, fig.height=7, echo=FALSE,  message=FALSE, warning=FALSE, jit_and_box}
+#jitter plots
+qplot(x = county, y = contb_receipt_amt, 
+      data = pres_df.clean, color = job) +
+  facet_wrap(~cand_pty_aff) + theme(axis.text.x = element_text(angle = 90, 
+                                   hjust = 1, 
+                                   vjust = 0.5)) + 
+  theme(legend.position = "top") + guides(color=guide_legend(nrow=1))
+
+#boxplots 
+qplot(x = county, y = contb_receipt_amt, 
+      data = na.omit(pres_df.clean), geom = 'boxplot',
+      fill = cand_pty_aff) +  facet_wrap(~job, nrow = 2) + 
+  theme(axis.text.x = element_text(angle = 90, 
+                                   hjust = 1, 
+                                   vjust = 0.5)) + 
+  theme(legend.position = "top") + guides(color=guide_legend(nrow=1))
+
+ggplot(na.omit(pres_df.clean), 
+       aes(x = county, y = contb_receipt_amt, fill = cand_pty_aff)) + 
+  geom_boxplot() + facet_wrap(~job, nrow = 2) +
+    theme(axis.text.x = element_text(angle = 90, 
+                                   hjust = 1, 
+                                   vjust = 0.5)) +
+  coord_cartesian(ylim = c(-10,3000)) + 
+  theme(legend.position = "top") + guides(color=guide_legend(nrow=1))
+
+ggplot(na.omit(pres_df.clean), 
+       aes(x = cand_pty_aff, y = contb_receipt_amt, fill = cand_pty_aff)) + 
+  geom_boxplot() + facet_wrap(~job, nrow = 1) +
+  coord_cartesian(ylim = c(-100,3000)) + 
+  scale_fill_manual(values=c("#0000FF","#FF0000"),
+                    name = "Party",
+                    labels=c("Democratic Party",
+                             "Republican Party")) + 
+  theme(legend.position = "top") + guides(color=guide_legend(nrow=1))
+
+ggplot(na.omit(pres_df.clean), 
+       aes(x = cand_pty_aff, y = contb_receipt_amt, fill = cand_pty_aff)) + 
+  geom_boxplot() + facet_wrap(~county, nrow = 5) +
+  coord_cartesian(ylim = c(-100,3000)) + 
+  scale_fill_manual(values=c("#0000FF","#FF0000"),
+                    name = "Party",
+                    labels=c("Democratic Party",
+                             "Republican Party")) + 
+  theme(legend.position = "top") + guides(color=guide_legend(nrow=1))
+
+ggplot(na.omit(pres_df.clean), 
+       aes(x = job, y = contb_receipt_amt, fill = job)) + 
+  geom_boxplot() + facet_wrap(~cand_nm, nrow = 3) +
+  coord_cartesian(ylim = c(-100,3000)) + 
+  theme(legend.position = "top") + guides(color=guide_legend(nrow=1))
+```
+
+# Correlations
+I attempted to correlate some of the features. 
+```{r fig.width=11, fig.height=7, echo=FALSE,  message=FALSE, warning=FALSE, one_ANOVA}
+
+#Is there a difference noticed for when something is a factor vs. a non-factor in these analysis? NO. 
+pres_df.clean$sex <- as.factor(pres_df.clean$sex)
+pres_df.clean$county <- as.factor(pres_df.clean$county)
+
+# features of interest
+foi <- list(pres_df.clean$cand_pty_aff,
+            pres_df.clean$sex,
+            pres_df.clean$county,
+            pres_df.clean$cand_nm,
+            pres_df.clean$job)
+# factor
+net.contbr$sex <- as.factor(net.contbr$sex)
+net.contbr$county <- as.factor(net.contbr$county)
+
+net <- filter(net.contbr,contbr_amt_sum > 1)
+foi_nc <- list(net$cand_pty_aff,
+            net$sex,
+            net$county,
+            net$cand_nm,
+            net$job)
+
+for (i in foi) {
+  model.lm <- lm(contb_receipt_amt ~ i, data = pres_df.clean)
+  summary(model.lm)
+  
+}
+# print best result
+summary(lm(contb_receipt_amt ~ foi[[4]], data = pres_df.clean))
+
+for (i in foi_nc) {
+  model.lm <- lm(log10(contbr_amt_sum) ~ i, data = net)
+  summary(model.lm)
+}
+
+# print best result
+summary(lm(contbr_amt_sum ~ foi_nc[[4]], data = net))
+
+if (F) {
+model.lm <- lm(contb_receipt_amt ~ cand_nm, data = pres_df.clean)
+model.lm2 <- update(model.lm, ~ . + county)
+model.lm3 <- update(model.lm2, ~ . + cand_pty_aff)
+model.lm4 <- update(model.lm3, ~ . + job)
+summary(model.lm4)
+}
+```
+I did a one-way NOVA for IFC and the features: candidate party, candidate gender, CA county, candidate name, and occupation of contributor. The highest correlation was 0.15 for candidate name and IFC and 0.22 for candidate name and the log summation of IFCs . This model could be said to explain 15% of the variance in the IFCs, and > ~22% of the variance in the the log summation of IFCs per contributor.   
+
+```{r fig.width=11, fig.height=7, echo=FALSE,  message=FALSE, warning=FALSE, chi}
+rev_foi <- rev(foi)  
+
+chisq.test(table(pres_df.clean$cand_pty_aff, pres_df.clean$sex))
+chisq.test(table(pres_df.clean$cand_pty_aff, pres_df.clean$county))
+chisq.test(table(pres_df.clean$cand_pty_aff, pres_df.clean$cand_nm))
+chisq.test(table(pres_df.clean$cand_pty_aff, pres_df.clean$job))
+chisq.test(table(pres_df.clean$sex,pres_df.clean$county))
+chisq.test(table(pres_df.clean$sex,pres_df.clean$cand_nm))
+chisq.test(table(pres_df.clean$sex,pres_df.clean$job))
+chisq.test(table(pres_df.clean$county,pres_df.clean$cand_nm))
+chisq.test(table(pres_df.clean$county,pres_df.clean$job))
+chisq.test(table(pres_df.clean$cand_nm,pres_df.clean$job))
+```
+I did a Chi-squared Test of Independence. The features of interest seem independent of each other. 
+
+# Univariate Analysis Explicit Questions 
+### What is the structure of your dataset?
+
+In the clean data set, there are 56,746 observations with 10 variables: cand_nm.x, contbr_nm, contbr_city, contbr_employer, contbr_occupation, contb_receipt_amt, contb_receipt_dt, cand_pty_aff, sex(cand), and county(contbr). 
+
+(Most) ----------------> (Least)  
+**county(contributor)**: Los Angeles County --> Alpine County  
+
+**sex(candidate)**: Male --> Female  
+
+**occupation(contributor)**: Retired --> Numerous (e.g. "Writer")
+
+**employer(contributor)**: Retired --> Numerous (e.g. "Zincnation, INC")
+
+**party(candidate)**: Republican Party --> Democratic Party
+
+Other observations:  
+Depending on how you group the data, the statistics of the IFCs change. This was discussed above.
+
+### What is/are the main feature(s) of interest in your dataset?
+The main features in the data set are IFCs and how they are divvied among contributor's occupation, county, etc.  Can I predict on average the amount a Republican or Democrat will receive in a given county? Yes. Can I determine the average IFC based on occupation? Yes. Can I predict the average a female candidate or male candidate will receive? Yes.     
+
+### What other features in the dataset do you think will help support your investigation into your feature(s) of interest?
+IFC amount, county, candidate party, contributor occupation, contributor employer, and candidate gender.   
+
+### Did you create any new variables from existing variables in the dataset?
+I merged data sets to create variables for candidate gender, political affiliation, and CA county. I recast date data from string to class time. I divvied occupation into 4 groups: retired, unemployed, working, and N/A, which is anonymous occupation or failed to state. 
+
+### Of the features you investigated, were there any unusual distributions? Did you perform any operations on the data to tidy, adjust, or change the form of the data? If so, why did you do this?
+
+The unmodified IFC data seem multimodal or bell-shaped. This was unusual since I assumed a bell-shaped curve.  Log transformations and sine log transformations were done on IFCs and net IFCs that were group per contributor, producing a more visually symmetric distribution and a visually skewed distribution, respectively. However, quantile-quantile plots of IFCs produced non-linear plots for all IFC data, both the transformative and the raw. The correlation is better for the adjusted data.  The transformations were done due to the order of magnitude difference in data. I tidied up the data for the time domain, contributor occupation, and IFC. I did this to be able to interpret the data and maybe draw meaningful conclusions. 
+
+# Bivariate Analysis
+### Talk about some of the relationships you observed in this part of the investigation. How did the feature(s) of interest vary with other features in the dataset?
+The net IFCs are dependent on county, political party of the candidate, the occupation of the contributor, and the gender of the candidate. The way that they vary among each other is best depicted by bar charts.  
+
+### Did you observe any interesting relationships between the other features (not the main feature(s) of interest)?
+
+Yes. Candidate's political party contributions breakdown per occupation was not among the main features of interest, or at least the combination wasn't since it wasn't tied to IFC. 
+
+### What was the strongest relationship you found?
+The strongest relation would be, given that IFCs are summed per day, the IFCs are increasing with time or proximity to the primary. Another relation observed is that the IFC variance can be explained per candidate.  
+
+# Multivariate Analysis
+### Talk about some of the relationships you observed in this part of the investigation. Were there features that strengthened each other in terms of looking at your feature(s) of interest?
+Most of the analysis conducted were reinforced by multivariate plots. The distributions of my features of interest and their inter-activity became more apparent with a multivariate plots. 
+### Were there any interesting or surprising interactions between features?
+Retired peoples contribute more to Republican candidates. The spread of donations in San Francisco. The contributions in contributions in general among occupation. 
+
+### OPTIONAL: Did you create any models with your dataset? Discuss the strengths and limitations of your model.
+
+Yes. I ran an ANOVA and Chi test. The ANOVA determined that the names of the candidates can explain ~30% of the variance experienced in IFC. The Chi test determined that the features seem independent of each other. The limitation is that I cannot predict with the ANOVA or the Chi test. 
+
+# Final Plots and Summary
+### Plot One
+```{r fig.width=11, fig.height=7, echo=FALSE,  message=FALSE, warning=FALSE, Plot_One}
+ggplot(aes(contbr_amt_sum), 
+                      data = na.omit(filter(net.contbr,
+                                            contbr_amt_sum > 1.))) + 
+  geom_histogram(color = 'black', 
+                 fill = '#6F6F6F', binwidth = 0.04, position = 'dodge') +
+  scale_x_log10(breaks = c(10, 50, 100, 
+                           250, 500, 1000,
+                           1500, 2700, 5000, 10000), 
+                name = "Net IFCs, US dollars") +
+  ggtitle("Log net IFCs per Contributor")
+```
+
+### Description One
+The histogram above identifies the trend of the distribution of net IFCs per contributor. This is engaging to a wide audience because it depicts the contribution tendencies of contributors, who can be any of us. Contributor's like to contribute in whole dollar amounts and in dollar amounts that are divisible by 10 or 5 for the most part. It also shows that most contributors will contribute the maximum legal amount ($2,700) eventually when a contributor can. Since the IFCs are grouped per contributor, the histogram shows the net of all of their contributions, not their contribution(s) on a particular day. This simple histogram allows the viewer to digest a lot of information about contributor tendencies. The perception is that the data would be normal around a mean, but the reality is that contributor's like whole numbers and contributing the most that they can eventually.     
+
+### Plot Two
+```{r fig.width=12, fig.height=7, echo=FALSE,  message=FALSE, warning=FALSE, Plot_Two}
+plot(net$cand_pty_aff, 
+     net$job, ylab = "Contributor Occupation", xlab = "", 
+     main = "Contributions by Occupation")
+```
+
+### Description Two
+A comparison is drawn among a contributor's occupation and the percentage of their contributions that make up the political party's contributions. This comparison is engaging to a wide audience because everybody knows at least one person who is retired, unemployed, or currently working, or who likes to remain anonymous. The identifying trends from this plot are that working contributors make up the bulk of contributions; that unemployed contributors make up more of a share of the Democratic Party's contributions than their Republican counterparts; and that retired and anonymous contributors make up more of a share of the Republican Party's contributions than their Democratic counterparts. The perception would be that contributors would contribute to political parties that benefit their interests. An argument can be made that the reality is that some contributors may not be contributing to political parties that may have their best interest. 
+
+### Plot Three
+```{r fig.width=12, fig.height=12, echo=FALSE,  message=FALSE, warning=FALSE, Plot_Three}
+plot1 <-  qplot(x=county, y=contbr_amt_sum, fill = county,
+      data= na.omit(net.contbr), main = "net IFCs by County",
+      geom='boxplot') + coord_cartesian(ylim=c(0,
+                             3000)) + 
+      stat_summary(fun.y = mean, geom = 'point', shape = 4) + 
+      theme(legend.position = 'none', 
+            axis.text.x = element_text(angle = 90, 
+                                   hjust = 1, 
+                                   vjust = 0.5)) + 
+      ylab("net IFC, US dollars")
+
+plot2 <- qplot(contbr_amt_sum, data = na.omit(net.contbr), binwidth = 0.01,
+      color = county, geom = 'density') + theme(legend.position = "top") + 
+      guides(color=guide_legend(nrow=6)) + xlab("net IFC, US dollars") + 
+      ylab("Density") + 
+  scale_x_log10(breaks = c(10, 50, 100, 
+                           250, 500, 1000,
+                           1500, 2700, 5000, 10000))
+
+grid.arrange(plot1,plot2, ncol=1)
+```
+
+### Description Three
+The comparison drawn in the plot above is the distribution of IFCs and the county of their contribution. The trend is that some counties contribute more than others. This is engaging to a wide audience because some people may have heard of these counties, or some may live in these counties, or some may know people who live in these counties. The perception is that the most populated counties might contribute the most on average, but the reality is that some of the smaller counties on average contribute more per the number of their county's contributions. The "x" in the box plots are the averages. These plots depict a lot of information concisely.  
+
+------
+
+# Reflection
+The analysis performed were on political contributions from the state of California and for presidential candidates. I analyzed the distribution of contributions. The distributions of contributions are different when grouped per the following features: contributor, candidate's name, candidate's political party, candidate's gender, contributor's county, contributor's occupation, receipt date, and election form. I analyzed the distributions among the individual contributions and the features. I analyzed the features dependence among each other. I analyzed the variance of contributions that can be explained by a feature.  
+
+The difficulties in analysis were with incomplete data, data wrangling, and lack of numeric data. Some of the data was incomplete, and some of the data was not pertinent or redundant to analyses. Data wrangling features to reducible quantities was a challenge a couple times. I struggled with correlating the data due to lack of numerical data, but in the process I learned about depicting categorical data more intelligently to discover patterns in the data. As this was my first foray into exploratory data analysis, another difficulty that I had was coming up with an overall plan of attack. Questions would arise from examination, and more questions would arise from those questions, and at some point, you have to step back and be okay with not answering every question, less you would examine the data perpetually.   
+
+Success in analysis were using the 'dplyr' package. The 'dplyr' package allows SQL-type queries, facilitating analyses. The packages 'ggplot' and 'qplot' had a lot of customization which helped demonstrate the analyses. Some other successes were grouping the contributions by contributor to reduce negative quantities and variability in FEC accounting practices, reducing the occupation and zip code features, comparing contributor occupations by political party and candidate gender, comparing inter-activity of features among themselves and contributions. These all happen to be important decisions and how my analysis is depicted. Mutating the data otherwise would change the analyses. 
+
+The analysis performed herein could be enriched with more numeric data such as population of counties, grouping of occupation data to more than 4 entries if possible, grouping of employer data to less than 10 entries if possible, the addition of contributor's gender, and a interactive pictorial map of the counties and distributions. With these additions, one could get contribution per population, more insights on occupation and employer data and voting habits, and comparisons of candidate gender and contributor gender correlations.

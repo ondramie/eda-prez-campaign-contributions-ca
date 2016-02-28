@@ -1,0 +1,22 @@
+cand_id,cand_nm,cand_nm_title,cand_pty_aff,contb_receipt_amt,ind_contrib,pac_contrib,party_contrib,cand_contrib,disbursements,coh_cop,other_contrib,debt,date_through,election_yr
+P00003392,"Clinton, Hillary Rodham","Clinton, Hillary Rodham",Democratic Party,$76051160,$75131206,$635460,$0,$278821,$43055988,$32995172,$5673,$647245,2015-09-30,2016 
+P60007168,"Sanders, Bernard","Sanders, Bernard",Democratic Party,$41179952,$39671766,$200,$0,$0,$14060230,$27119722,$1507986,$0,2015-09-30,2016 
+P60005915,"Carson, Benjamin S.","Carson, Benjamin S.",Republican Party,$31274992,$31247904,$2088,$0,$25000,$20002458,$11272534,$0,$25000,2015-09-30,2016 
+P60006111,"Cruz, Rafael Edward 'Ted'","Cruz, Rafael Edward 'Ted'",Republican Party,$26437929,$26139614,$48302,$0,$0,$12659025,$13778904,$250013,$0,2015-09-30,2016 
+P60008059,"Bush, Jeb","Bush, Jeb",Republican Party,$24765380,$24244543,$132117,$0,$388720,$14494251,$10271129,$0,$404737,2015-09-30,2016 
+P60006723,"Rubio, Marco","Rubio, Marco",Republican Party,$13597764,$13557574,$-138340,$102,$0,$6687639,$10975989,$178428,$75902,2015-09-30,2016 
+P40003576,"Paul, Rand","Paul, Rand",Republican Party,$9348900,$7677329,$23582,$0,$0,$7221129,$2124156,$1647989,$365359,2015-09-30,2016 
+P60007242,"Fiorina, Carly","Fiorina, Carly",Republican Party,$8447720,$8439064,$8650,$0,$0,$2898526,$5549194,$6,$0,2015-09-30,2016 
+P60006046,"Walker, Scott","Walker, Scott",Republican Party,$7356771,$7338291,$18400,$0,$0,$6371557,$985213,$80,$161133,2015-09-30,2016 
+P80001571,"Trump, Donald J.","Trump, Donald J.",Republican Party,$5735514,$3825880,$0,$58,$1909577,$5440691,$254773,$-1,$1804747,2015-09-30,2016 
+P60007697,"Graham, Lindsey O.","Graham, Lindsey O.",Republican Party,$4745811,$2967250,$53550,$0,$0,$3094501,$1651309,$1725011,$0,2015-09-30,2016 
+P60003670,"Kasich, John R.","Kasich, John R.",Republican Party,$4374838,$4235566,$139273,$0,$0,$1732889,$2641950,$-1,$0,2015-09-30,2016 
+P60008521,"Christie, Christopher J.","Christie, Christopher J.",Republican Party,$4188864,$4126264,$62600,$0,$0,$2802417,$1386447,$0,$246347,2015-09-30,2016 
+P80003478,"Huckabee, Mike","Huckabee, Mike",Republican Party,$3234967,$3209467,$25500,$0,$0,$2473556,$761411,$0,$133104,2015-09-30,2016 
+P60007671,"O'Malley, Martin Joseph","O'Malley, Martin Joseph",Democratic Party,$3203744,$3153572,$50172,$0,$0,$2397757,$805987,$0,$20608,2015-09-30,2016 
+P20003281,"Perry, James R. (Rick)","Perry, James R. (Rick)",Republican Party,$1266811,$1259770,$7040,$0,$0,$1564346,$44554,$1,$0,2015-09-30,2016 
+P60008398,"Jindal, Bobby","Jindal, Bobby",Republican Party,$1158092,$1148092,$10000,$0,$0,$897153,$260939,$0,$0,2015-09-30,2016 
+P20002721,"Santorum, Richard J.","Santorum, Richard J.",Republican Party,$1013315,$992221,$0,$0,$0,$779145,$226526,$21094,$450408,2015-09-30,2016 
+P60009685,"Lessig, Lawrence","Lessig, Lawrence",Democratic Party,$1012067,$1011447,$0,$0,$620,$438131,$573936,$0,$0,2015-09-30,2016 
+P60008885,"Webb, James Henry Jr.","Webb, James Henry Jr.",Democratic Party,$696972,$691972,$5000,$0,$0,$380207,$316765,$0,$0,2015-09-30,2016 
+P60007572,"Pataki, George E.","Pataki, George E.",Republican Party,$409309,$389309,$0,$0,$20000,$395738,$13571,$0,$20000,2015-09-30,2016 
