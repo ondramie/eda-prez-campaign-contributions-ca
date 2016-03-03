@@ -1,7 +1,9 @@
 ---
 title: "An Exploration into the Individual Financial Contributions from California to the 2016 Presidential Campaigns" 
 author: Michal Ondras
-output: html_document
+output:
+  md_document:
+    variant: markdown_github
 ---
 ```{r global_options, include= FALSE}
 knitr::opts_chunk$set(fig.width=12, fig.height=8, echo=FALSE, warning=FALSE, message=FALSE)
@@ -418,6 +420,7 @@ net.contbr <- pres_df %>%
             contbr_amt_sum = sum(contb_receipt_amt), 
             count.n = n()) %>%
   arrange(desc(contbr_amt_sum))
+net.contbr <- data.frame(net.contbr)
 
 # plot net IFC 
 p20 <- ggplot( aes(contbr_amt_sum), 
@@ -473,8 +476,7 @@ p23
 Seeing too many categories for occupations, I reduced the categories to four: N/A, retired, unemployed, and working. Retired peoples of CA contribute more to Republican candidates, both in quantity and contribution. This is a surprise to me.  Unemployed and working peoples contribute more to Democratic candidates than Republican candidates. Doing the same plot for employers seems redundant to me. 
 
 ```{r  Cleaning_up_Data}
-# (2) and (3)
-# Clean up data 
+
 # Date Class conversion to character (not needed)
 pres_df$contb_receipt_dt.y <- as.character(pres_df$contb_receipt_dt.x)
 pres_df.clean <- select(pres_df,
@@ -500,19 +502,16 @@ contbr.occupation.count <- pres_df.clean %>%
   arrange(desc(count.n))
 #contbr.occupation.count
 
+# groups by party
 group.occup.pty <- pres_df.clean %>%
 group_by(contbr_occupation, cand_pty_aff, cand_nm) %>%
 summarise(ifc_sum = sum(contb_receipt_amt),
   count.n = n()) %>%
 arrange(desc(count.n))
 
-#234567890123456789012345678901234567901234567890123456789012345678901234567890
-if (T) {
-  #########################  group occupations  ###############################
-
-if (F) {    
-  # couldn't get this to work....
-  cj <- function(data,col) {
+# groups occupation column into four groups
+###############################################################################
+create_job_column <- function(data,col) {
             no_info = c("INFORMATION REQUESTED PER BEST EFFORTS", 
                         "INFORMATION REQUESTED", "NOT AVAILABLE")
             unemp = c("NOT EMPLOYED", "NONE", "UNEMPLOYED")
@@ -521,6 +520,7 @@ if (F) {
 
             data_col <- data[,col]
             data_col <- gsub(find1, "N/A", data_col, ignore.case = TRUE)
+            data_col <- gsub('^\\s*$', "N/A", data_col, ignore.case = TRUE)
             data_col <- gsub(find2, "unemployed", data_col, 
                          ignore.case = TRUE)
             data_col <- gsub(".*RETIRED.*", "retired", data_col, 
@@ -530,65 +530,10 @@ if (F) {
                             ignore.case = TRUE, perl = T)
             data_col <- as.factor(data_col)
             return(data_col)
-          }
-  
-  pres_df.clean$job <- cj(pres_df.clean, "contbr_occupation")
-  summary(pres_df.clean$job)
-  }
-  
-  no_info = c("INFORMATION REQUESTED PER BEST EFFORTS", 
-              "INFORMATION REQUESTED", "NOT AVAILABLE")
-  unemp = c("NOT EMPLOYED", "NONE", "UNEMPLOYED")
-  find1 <- paste(no_info, collapse = "|")
-  find2 <- paste(unemp, collapse = "|")
-  
-  # replace no_info list entries with N/A 
-  pres_df.clean$job <- gsub(find1, "N/A", pres_df.clean$contbr_occupation, 
-                            ignore.case = TRUE)
-  select(pres_df.clean,contbr_occupation, job)
-  summary(pres_df.clean$job)
-  
-  # replace list unemp with unemployed
-  pres_df.clean$job <- gsub(find2, "unemployed", pres_df.clean$job, 
-                            ignore.case = TRUE)
-  
-  # replace any retired string with retired word
-  pres_df.clean$job <- gsub(".*RETIRED.*", "retired", 
-                            pres_df.clean$job, ignore.case = TRUE)
-  
-  # if not retired or n/a or unemployed, then working
-  find3 <- "^(?!RETIRED|N/A|unemployed).*$"
-  pres_df.clean$job <- gsub(find3, "working", pres_df.clean$job, 
-                            ignore.case = TRUE, perl = T)
-  pres_df.clean$job <- as.factor(pres_df.clean$job)
-  
-  pres_df.clean$job <- as.factor((pres_df.clean$job))
-  
-  # ---------------------- net IFC occupation ----------------------------- #
-  # replace no_info list entries with N/A 
-  net.contbr$job <- gsub(find1, "N/A", net.contbr$contbr_occupation, 
-                         ignore.case = TRUE)
-  select(net.contbr,contbr_occupation, job)
-  summary(net.contbr$job)
-  
-  # replace list unemp with unemployed
-  net.contbr$job <- gsub(find2, "unemployed", net.contbr$job, 
-                         ignore.case = TRUE)
-  
-  # replace any retired string with retired word
-  net.contbr$job <- gsub(".*RETIRED.*", "retired", net.contbr$job, 
-                         ignore.case = TRUE)
+}  
 
-  # if not retired or n/a or unemployed, then working
-  find3 <- "^(?!RETIRED|N/A|unemployed).*$"
-  net.contbr$job <- gsub(find3, "working", net.contbr$job, 
-                         ignore.case = TRUE, perl = T)
-  net.contbr$job <- as.factor(net.contbr$job)
-  
-  #select(net.contbr,contbr_occupation, job)
-  net.contbr$job <- as.factor((net.contbr$job))
-}
-
+pres_df.clean$job <- create_job_column(pres_df.clean, "contbr_occupation")
+net.contbr$job <- create_job_column(net.contbr,"contbr_occupation")  
 #############################################################################
 
 p24 <- qplot(job, data = na.omit(pres_df.clean),

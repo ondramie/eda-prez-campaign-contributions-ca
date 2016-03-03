@@ -311,11 +311,401 @@ Spine plot (37) shows that working peoples are responsible for the majority of c
 Multivariate Plots
 ------------------
 
-![](political_Contributions_CA2016g_files/figure-markdown_github/Multivariate-1.png) ![](political_Contributions_CA2016g_files/figure-markdown_github/Multivariate-2.png) ![](political_Contributions_CA2016g_files/figure-markdown_github/Multivariate-3.png) ![](political_Contributions_CA2016g_files/figure-markdown_github/Multivariate-4.png) ![](political_Contributions_CA2016g_files/figure-markdown_github/Multivariate-5.png) These don't seem to produce anything discernible.
+I wanted to see if there was any delineation of features with time. Are the IFCs in different strata when it comes to counties, candidates, gender, and party with respect to time?
 
-![](political_Contributions_CA2016g_files/figure-markdown_github/Density-1.png) ![](political_Contributions_CA2016g_files/figure-markdown_github/Density-2.png) ![](political_Contributions_CA2016g_files/figure-markdown_github/Density-3.png) ![](political_Contributions_CA2016g_files/figure-markdown_github/Density-4.png) These support the contribution buckets or striations witnessed in other plots, and the finding found in the spline plots.
+![](political_Contributions_CA2016g_files/figure-markdown_github/Multivariate-1.png) ![](political_Contributions_CA2016g_files/figure-markdown_github/Multivariate-2.png) ![](political_Contributions_CA2016g_files/figure-markdown_github/Multivariate-3.png) ![](political_Contributions_CA2016g_files/figure-markdown_github/Multivariate-4.png) ![](political_Contributions_CA2016g_files/figure-markdown_github/Multivariate-5.png) I don't see anything discernible with the time plots.
 
-![](political_Contributions_CA2016g_files/figure-markdown_github/jit_and_box-1.png) ![](political_Contributions_CA2016g_files/figure-markdown_github/jit_and_box-2.png) ![](political_Contributions_CA2016g_files/figure-markdown_github/jit_and_box-3.png) ![](political_Contributions_CA2016g_files/figure-markdown_github/jit_and_box-4.png) ![](political_Contributions_CA2016g_files/figure-markdown_github/jit_and_box-5.png) ![](political_Contributions_CA2016g_files/figure-markdown_github/jit_and_box-6.png)
+![](political_Contributions_CA2016g_files/figure-markdown_github/jitter_job-1.png) The plot shows Hillary and Bernie having a lot more data than the others. It also looks like certain occupations are investing in Bernie, Hilary, and the Republicans. Buckets are very noticeable in this plot. These support the contribution buckets or striations witnessed in other plots, and the findings that were found in the spline plots. Next, I wanted to see the density of the IFCs overlaid on top of each other. Perhaps, there is a convolution of distributions.
+
+    ## [[1]]
+
+![](political_Contributions_CA2016g_files/figure-markdown_github/Density_Plots-1.png)
+
+    ## 
+    ## [[2]]
+    ## pres_df.clean[, feature]: Alameda
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ## -2700.0    30.0   100.0   333.6   250.0  5400.0 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Alpine
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ##    25.0    37.5    50.0    50.0    62.5    75.0 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Amador
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ##    5.00   31.25   55.00  168.30  100.00 1000.00 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Butte
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ##     1.0    25.0    50.0   145.5   100.0  2700.0 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Calaveras
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ##    5.00   31.50  100.00   90.55  100.00  500.00 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Colusa
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ##    50.0    87.5   123.5   136.8   172.8   250.0 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Contra Costa
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ## -2700.0    25.0    75.0   305.9   250.0  5400.0 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Del Norte
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ## -1550.0    30.0    50.0   154.4   104.0  2000.0 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: El Dorado
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ## -2600.0    35.0    50.0   133.1   100.0  2700.0 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Fresno
+    ##     Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
+    ## -10000.0     43.0     50.0    177.2    100.0  10000.0 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Glenn
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ##   25.00   50.00   92.86  192.70  100.00 1000.00 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Humboldt
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ## -500.00   50.00   66.68  129.40  100.00 2700.00 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Imperial
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ##     1.0    40.5   100.0   151.2   200.0  1000.0 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Inyo
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ## -2700.0    35.0    50.0   520.6   100.0 10000.0 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Kern
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ##   -2700      35      83     292     250    5000 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Kings
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ##    10.0    25.0    50.0   116.7   100.0  1000.0 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Lake
+    ##     Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
+    ## -2700.00    19.25    38.32   115.90   100.00  2700.00 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Lassen
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ##   25.00   50.00   50.00  246.80   93.75 2700.00 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Los Angeles
+    ##     Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
+    ## -5400.00    48.07   100.00   677.90  1000.00 10800.00 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Madera
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ## -2000.0    35.0    50.0   102.4   100.0  2000.0 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Marin
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ## -2700.0    43.1   100.0   566.3   500.0  7000.0 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Mariposa
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ##   10.00   38.66   50.00   79.74  100.00  500.00 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Mendocino
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ## -100.00   50.00   88.28  128.00  124.30 2700.00 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Merced
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ##   -50.0    50.0   100.0   218.3   113.0  5365.0 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Modoc
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ##    20.0    22.5    25.0   123.6    50.0  1000.0 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Mono
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ##      25      35      50     142     100    1000 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Monterey
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ## -2700.0    25.0    75.0   352.7   250.0  5400.0 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Napa
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ## -2700.0    35.0   100.0   270.9   250.0  2700.0 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Nevada
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ## -4800.0    30.0    50.0   127.5   100.0  2700.0 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Orange
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ## -5400.0    35.0   100.0   460.5   300.0 10800.0 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Placer
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ## -2700.0    25.0    50.0   294.4   200.0  5400.0 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Plumas
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ##   10.00   25.00   50.00   69.71  100.00  250.00 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Riverside
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ## -1250.0    35.0    55.0   195.7   125.0  2700.0 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Sacramento
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ## -2700.0    25.0    75.0   262.8   200.0  5400.0 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: San Benito
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ##    10.0    50.0    50.0   104.2   100.0   500.0 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: San Bernardino
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ## -5400.0    25.0    50.0   183.8   100.0  5400.0 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: San Diego
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ## -5400.0    35.0   100.0   359.2   250.0  5400.0 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: San Francisco
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ## -4266.0    50.0   150.0   733.4  1000.0 10000.0 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: San Joaquin
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ##  -100.0    50.0   100.0   215.8   200.0  2700.0 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: San Luis Obispo
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ## -5400.0    35.0    50.0   185.4   100.0 10800.0 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: San Mateo
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ## -2700.0    50.0   200.0   798.4  1038.0  5400.0 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Santa Barbara
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ##   -2700      35     100     427     250    6000 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Santa Clara
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ## -2700.0    35.0   100.0   534.2   500.0  8100.0 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Santa Cruz
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ##  -52.00   31.75   78.32  199.30  242.50 2700.00 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Shasta
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ## -500.00   25.00   66.55  134.60  100.00 2700.00 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Sierra
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ##     250     250     250     250     250     250 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Siskiyou
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ##    3.00   35.00   50.00   99.59  100.00 1000.00 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Solano
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ## -250.00   25.00   55.15  175.20  150.00 5400.00 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Sonoma
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ## -5375.0    25.0   100.0   281.7   250.0  5400.0 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Stanislaus
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ## -1700.0    50.0    75.0   153.3   100.0  2700.0 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Sutter
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ##   -50.0    35.0    50.0   181.5   100.0  2700.0 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Tehama
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ## -100.00   48.75   62.15  115.70  150.00 1000.00 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Trinity
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ##    20.0    50.0   100.0   102.5   100.0  1000.0 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Tulare
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ## -300.00   33.25  100.00  253.00  250.00 2700.00 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Tuolumne
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ##    25.0    50.0    75.0    98.5   100.0   500.0 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Ventura
+    ##     Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
+    ## -2700.00    25.00    82.44   299.50   250.00 10800.00 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Yolo
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ##    5.00   35.84   90.55  212.50  133.90 2700.00 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Yuba
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ##    10.0    50.0   100.0   123.8   200.0   250.0 
+    ## 
+    ## [[1]]
+
+![](political_Contributions_CA2016g_files/figure-markdown_github/Density_Plots-2.png)
+
+    ## 
+    ## [[2]]
+    ## pres_df.clean[, feature]: Democratic Party
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ## -5400.0    35.0   100.0   510.9   300.0 10000.0 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Republican Party
+    ##     Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
+    ## -10000.0     40.0    100.0    428.7    250.0  10800.0 
+    ## 
+    ## [[1]]
+
+![](political_Contributions_CA2016g_files/figure-markdown_github/Density_Plots-3.png)
+
+    ## 
+    ## [[2]]
+    ## pres_df.clean[, feature]: female
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ## -5400.0    50.0   140.0   795.7  1350.0  5400.0 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: male
+    ##     Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
+    ## -10000.0     35.0    100.0    321.1    250.0  10800.0 
+    ## 
+    ## [[1]]
+
+![](political_Contributions_CA2016g_files/figure-markdown_github/Density_Plots-4.png)
+
+    ## 
+    ## [[2]]
+    ## pres_df.clean[, feature]: Bush, Jeb
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ##   -2700     250    2000    1548    2700    7000 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Carson, Benjamin S.
+    ##     Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
+    ## -10000.0     25.0     50.0    172.4    100.0  10000.0 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Christie, Christopher J.
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ##   -2700     500    2700    1770    2700    5400 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Clinton, Hillary Rodham
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ## -5400.0    50.0   150.0   838.5  2450.0  5400.0 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Cruz, Rafael Edward 'Ted'
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ## -5400.0    35.0    50.0   178.9   100.0 10800.0 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Fiorina, Carly
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ## -3300.0    50.0   100.0   497.6   500.0  5400.0 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Graham, Lindsey O.
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ##   -2700     250    1000    1388    2700    8100 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Huckabee, Mike
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ##     4.5    50.0   375.0   819.2  1000.0  5400.0 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Jindal, Bobby
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ##    50.0   250.0   500.0   743.5  1000.0  2700.0 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Kasich, John R.
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ##      11     250    1000    1333    2700    2700 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Lessig, Lawrence
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ## -2700.0    50.0   250.0   500.4   500.0  2700.0 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: O'Malley, Martin Joseph
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ##       5     100     500    1102    2700    5400 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Pataki, George E.
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ##   100.0   312.5   875.0  1362.0  2700.0  2700.0 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Paul, Rand
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ## -5400.0    25.0   100.0   271.7   250.0  5400.0 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Perry, James R. (Rick)
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ##   -2700    1000    2700    1797    2700    2700 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Rubio, Marco
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ## -5400.0    50.0   250.0   705.7  1000.0  5400.0 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Sanders, Bernard
+    ##     Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
+    ## -5000.00    28.94    50.00   143.90   120.00 10000.00 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Santorum, Richard J.
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ##   25.00   88.45  400.00  991.20 2700.00 2700.00 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Trump, Donald J.
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ##  -100.0   167.2   250.0   546.2   500.0  2700.0 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Walker, Scott
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ## -5400.0   150.0   300.0   894.7  1500.0 10800.0 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: Webb, James Henry Jr.
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ##     5.0   100.0   500.0   754.6  1000.0  5400.0 
+    ## 
+    ## [[1]]
+
+![](political_Contributions_CA2016g_files/figure-markdown_github/Density_Plots-5.png)
+
+    ## 
+    ## [[2]]
+    ## pres_df.clean[, feature]: N/A
+    ##     Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
+    ## -10000.0     30.0    100.0    266.7    300.0  10000.0 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: retired
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ## -5400.0    25.0    55.0   267.8   165.1 10800.0 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: unemployed
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ##    1.00   29.14   50.00  166.50  100.00 5400.00 
+    ## -------------------------------------------------------- 
+    ## pres_df.clean[, feature]: working
+    ##    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+    ## -5400.0    45.0   100.0   602.4   500.0 10800.0
+
+The density plots show several peaks that are consistent with other plots and it appears that there is a convolution taking taking place. The distributions do look disparate as well depending how you group them. The peaks look to be around $2,700 and ~$250.
+
+![](political_Contributions_CA2016g_files/figure-markdown_github/jit_and_box-1.png) Nothing strikes out here. A simple box plot would probably show this simiplier.
+
+![](political_Contributions_CA2016g_files/figure-markdown_github/boxes-1.png) Too many features on one plot here.
+
+![](political_Contributions_CA2016g_files/figure-markdown_github/boxes_two-1.png) This is a zoom-in and it is still too cluttered.
+
+![](political_Contributions_CA2016g_files/figure-markdown_github/boxes_tree-1.png) This a better plot and it displays the outliers nicely for the various occupations. These are deceiving since negative IFCs have not been removed here, which could be pushing the distribution south.
+
+![](political_Contributions_CA2016g_files/figure-markdown_github/boxes_four-1.png) This nicely shows the distributions of the political contributions and one could glean the political leanings of each county. Like the plot above, the negative values may be leading to distortion. ![](political_Contributions_CA2016g_files/figure-markdown_github/boxes_five-1.png) The distribution of the candidate's IFCs across occupations is very clear here. Some are more evenly across the board then others.
 
 Correlations
 ============
@@ -444,7 +834,7 @@ I did a one-way NOVA for IFC and the features: candidate party, candidate gender
     ##  Pearson's Chi-squared test
     ## 
     ## data:  table(pres_df.clean$cand_pty_aff, pres_df.clean$job)
-    ## X-squared = 8798.2, df = 3, p-value < 2.2e-16
+    ## X-squared = 8669.5, df = 3, p-value < 2.2e-16
 
     ## 
     ##  Pearson's Chi-squared test
@@ -462,7 +852,7 @@ I did a one-way NOVA for IFC and the features: candidate party, candidate gender
     ##  Pearson's Chi-squared test
     ## 
     ## data:  table(pres_df.clean$sex, pres_df.clean$job)
-    ## X-squared = 3141.1, df = 3, p-value < 2.2e-16
+    ## X-squared = 3096.6, df = 3, p-value < 2.2e-16
 
     ## 
     ##  Pearson's Chi-squared test
@@ -474,13 +864,13 @@ I did a one-way NOVA for IFC and the features: candidate party, candidate gender
     ##  Pearson's Chi-squared test
     ## 
     ## data:  table(pres_df.clean$county, pres_df.clean$job)
-    ## X-squared = 4381.8, df = 171, p-value < 2.2e-16
+    ## X-squared = 4316, df = 171, p-value < 2.2e-16
 
     ## 
     ##  Pearson's Chi-squared test
     ## 
     ## data:  table(pres_df.clean$cand_nm, pres_df.clean$job)
-    ## X-squared = 18923, df = 60, p-value < 2.2e-16
+    ## X-squared = 18776, df = 60, p-value < 2.2e-16
 
 I did a Chi-squared Test of Independence. The features of interest seem independent of each other.
 
