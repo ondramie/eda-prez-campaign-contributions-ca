@@ -1,2 +1,2 @@
-# Summary of EDA on Presidential Campaign Contributions from the State of California
+# Goal
 The goal of this project was to perform exploratory data analysis on financial contributions from the state of California for the presidential campaign of 2016. The report is contained [here] (https://github.com/ondramie/eda-prez-campaign-contributions-ca/blob/master/political_Contributions_CA2016g.md).  An explanatory portion is towards the end of the report.
