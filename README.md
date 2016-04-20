@@ -3,7 +3,7 @@ The goal of this project was to perform exploratory data analysis on financial c
 
 # Description of Files
 File Name| Description
-:--:|:--:
+:--|:--
 P00000001-CA.csv| Data Set of Individual Financial Contributions from California 
 candidate-list.csv| Data Set of Candidate Information
 zip_code_database.csv| Data Set of California by Zip Code
